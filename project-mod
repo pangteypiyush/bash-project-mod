@@ -1,0 +1,63 @@
+# {{{ bashrc
+# 1. define base directory of projects
+# PROJECT_BASE='<DIR>'
+#
+# 2. load library and initialize project environment
+# source /usr/share/bash-project-mod/project-mod && __init_project
+#
+# NOTE: to override default project (otherwise read from ~/.default_project)
+# PROJECT='<default project>'
+# }}}
+
+#{{{ lib
+function __check_dmenu {
+	if [ ! -z "$DISPLAY" ] && command -V rofi &>/dev/null; then
+		return
+	fi
+	return 1
+}
+
+# __init_project [project]
+function __init_project {
+	PROJECT_BASE="${PROJECT_BASE:-/home/`id -n --user`/}"
+	[ ! -z "$*" ] && [ -d "$PROJECT_BASE/$*" ] && PROJECT="$*"
+	if [[ -z "$PROJECT" ]]; then
+		[[ -r ~/.default_project ]] && PROJECT="`cat ~/.default_project`" || return
+	fi
+}
+
+function chproject {
+	local _arg
+	if [ ! -z "$*" ]; then
+		_arg="${*%%/*}"
+	elif __check_dmenu; then
+		for f in "$PROJECT_BASE"/*; do
+			[[ -d "$f" ]] && local _dirs+=("$f")
+		done
+		[ ! -z "$_dirs" ] && \
+			_arg=$(printf '%s\n' "${_dirs[@]#"$PROJECT_BASE"/}" | rofi -dmenu -i -p "Project" 2>/dev/null)
+	fi
+	[ ! -z "$_arg" ] && __init_project "$_arg"
+}
+
+function lsp {
+	case "$@" in
+		"--set-default")
+			echo "$PROJECT" > ~/.default_project; return ;;
+		"--read-config")
+			[[ ! -z "$PROJECT" ]] && cat "$PROJECT_BASE/$PROJECT/".p.conf 2>/dev/null; return ;;
+	esac
+	if [ ! -z "$PROJECT" ] && [ -d "$PROJECT_BASE/$PROJECT$@" ]; then
+		local _arg="$PROJECT_BASE/$PROJECT$@"
+		[ -L "$_arg" ] && local _arg=`readlink -f "$_arg"`
+		echo "$_arg"
+	fi
+}
+
+function cdp {
+	local _arg=`lsp "$@"`
+	[ ! -z "$_arg" ] && cd "$_arg"
+}
+#}}}
+
+# vim:ft=sh:fdm=marker

@@ -1,0 +1,51 @@
+# bash completion for project-mod                          -*- shell-script -*-
+
+_lsp()
+{
+    local cur BPPATH
+    _init_completion || return
+
+    case $cur in
+        -*)
+            [[ "$1" == "lsp" ]] && \
+				COMPREPLY=( $( compgen -W '--set-default --read-config' -- "$cur" ) )
+            ;;
+        *)
+            [ -z "$cur" ] && COMPREPLY=( "/" ) && return
+            case "$1" in
+                lsp|cdp)   BPPATH=`lsp`  ;;
+            esac
+            k="${#COMPREPLY[@]}"
+            [[ -z "$BPPATH" ]] && return
+            for j in $( compgen -d -- $BPPATH/$cur ); do
+                COMPREPLY[k++]=${j#$BPPATH/}
+            done
+            if [[ ${#COMPREPLY[@]} -eq 1 ]]; then
+                i=${COMPREPLY[0]}
+                if [[ "$i" == "$cur" && $i != "*/" ]]; then
+                    COMPREPLY[0]="${i}/"
+                fi
+            fi
+            ;;
+    esac
+} &&
+
+_chproject()
+{
+    local prev
+    _init_completion || return
+
+    if [ "$prev" == "$1" ]; then
+        [[ -z "$PROJECT_BASE" ]] && return
+        local -A projects
+        for file in "$PROJECT_BASE"/*; do
+            [[ -d "$file" ]] && projects["${file#"$PROJECT_BASE"/}"]=1
+        done
+        COMPREPLY=( $( compgen -W '${!projects[@]}' -- "$cur" ) )
+    fi
+} &&
+
+complete -F _lsp -o bashdefault -o nospace lsp cdp &&
+complete -F _chproject -o bashdefault chproject
+
+# ex: filetype=sh
