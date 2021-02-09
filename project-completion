@@ -1,51 +1,65 @@
 # bash completion for project-mod                          -*- shell-script -*-
 
-_lsp()
+__filedir_wrapper()
 {
-    local cur BPPATH
+    [ $# -ne 2 ] && return
+
+    local dironly=$1 BPPATH="$2" list cur BPPATH
+    [ -z "$BPPATH" ] && return
     _init_completion || return
 
-    case $cur in
-        -*)
-            [[ "$1" == "lsp" ]] && \
-				COMPREPLY=( $( compgen -W '--set-default --read-config' -- "$cur" ) )
-            ;;
-        *)
-            [ -z "$cur" ] && COMPREPLY=( "/" ) && return
-            case "$1" in
-                lsp|cdp)   BPPATH=`lsp`  ;;
-            esac
-            k="${#COMPREPLY[@]}"
-            [[ -z "$BPPATH" ]] && return
-            for j in $( compgen -d -- $BPPATH/$cur ); do
-                COMPREPLY[k++]=${j#$BPPATH/}
-            done
-            if [[ ${#COMPREPLY[@]} -eq 1 ]]; then
-                i=${COMPREPLY[0]}
-                if [[ "$i" == "$cur" && $i != "*/" ]]; then
-                    COMPREPLY[0]="${i}/"
-                fi
-            fi
-            ;;
-    esac
+    [ -z "$cur" ] && COMPREPLY=( "/" ) && return
+
+    if [[ "$dironly" == "yes" ]]; then
+        list=$( compgen -d -- $BPPATH/$cur )
+    else
+        list=$( compgen -o filenames -A file -- $BPPATH/$cur )
+    fi
+
+    COMPREPLY=()
+    for j in $list; do
+        if [[ -d "$j" ]]; then
+            COMPREPLY+=("${j#$BPPATH/}/")
+        else
+            COMPREPLY+=("${j#$BPPATH/}")
+        fi
+    done
+}
+
+_lsp()
+{
+    __filedir_wrapper no "`lsp`"
+} &&
+
+_cdp()
+{
+    __filedir_wrapper yes "`lsp`"
 } &&
 
 _chproject()
 {
-    local prev
+    local prev cur
     _init_completion || return
 
-    if [ "$prev" == "$1" ]; then
-        [[ -z "$PROJECT_BASE" ]] && return
-        local -A projects
-        for file in "$PROJECT_BASE"/*; do
-            [[ -d "$file" ]] && projects["${file#"$PROJECT_BASE"/}"]=1
-        done
-        COMPREPLY=( $( compgen -W '${!projects[@]}' -- "$cur" ) )
-    fi
+    case $cur in
+        -*)
+            COMPREPLY=( $( compgen -W '--set-default --read-config' -- "$cur" ) )
+            ;;
+        *)
+            if [ "$prev" == "$1" ]; then
+                [[ -z "$PROJECT_BASE" ]] && return
+                local -A projects
+                for file in "$PROJECT_BASE"/*; do
+                    [[ -d "$file" ]] && projects["${file#"$PROJECT_BASE"/}"]=1
+                done
+                COMPREPLY=( $( compgen -W '${!projects[@]}' -- "$cur" ) )
+            fi
+        ;;
+    esac
 } &&
 
-complete -F _lsp -o bashdefault -o nospace lsp cdp &&
+complete -F _lsp -o bashdefault -o nospace lsp &&
+complete -F _cdp -o bashdefault -o nospace cdp &&
 complete -F _chproject -o bashdefault chproject
 
 # ex: filetype=sh

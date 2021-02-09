@@ -11,16 +11,13 @@
 
 #{{{ lib
 function __check_dmenu {
-	if [ ! -z "$DISPLAY" ] && command -V rofi &>/dev/null; then
-		return
-	fi
-	return 1
+	[ -n "$DISPLAY" ] && command -V rofi &>/dev/null && return || return 1
 }
 
 # __init_project [project]
 function __init_project {
 	PROJECT_BASE="${PROJECT_BASE:-/home/`id -n --user`/}"
-	[ ! -z "$*" ] && [ -d "$PROJECT_BASE/$*" ] && PROJECT="$*"
+	[ -n "$*" ] && [ -d "$PROJECT_BASE/$*" ] && PROJECT="$*"
 	if [[ -z "$PROJECT" ]]; then
 		[[ -r ~/.default_project ]] && PROJECT="`cat ~/.default_project`" || return
 	fi
@@ -28,26 +25,35 @@ function __init_project {
 
 function chproject {
 	local _arg
-	if [ ! -z "$*" ]; then
-		_arg="${*%%/*}"
-	elif __check_dmenu; then
-		for f in "$PROJECT_BASE"/*; do
-			[[ -d "$f" ]] && local _dirs+=("$f")
-		done
-		[ ! -z "$_dirs" ] && \
-			_arg=$(printf '%s\n' "${_dirs[@]#"$PROJECT_BASE"/}" | rofi -dmenu -i -p "Project" 2>/dev/null)
-	fi
-	[ ! -z "$_arg" ] && __init_project "$_arg"
-}
+	local -a _dirs
 
-function lsp {
-	case "$@" in
+	case "$1" in
 		"--set-default")
 			echo "$PROJECT" > ~/.default_project; return ;;
 		"--read-config")
-			[[ ! -z "$PROJECT" ]] && cat "$PROJECT_BASE/$PROJECT/".p.conf 2>/dev/null; return ;;
+			[ -n "$PROJECT" ] && cat "$PROJECT_BASE/$PROJECT/".p.conf 2>/dev/null; return ;;
+		--*) return 1 ;;
 	esac
-	if [ ! -z "$PROJECT" ] && [ -d "$PROJECT_BASE/$PROJECT$@" ]; then
+
+	if [ -n "$*" ]; then
+		_arg="${*%%/*}"
+	else
+		for f in "$PROJECT_BASE"/*; do
+			[ -d "$f" ] && _dirs+=("$f")
+		done
+		[ -z "$_dirs" ] && return 1 || _dirs="${_dirs[@]#"$PROJECT_BASE"/}"
+
+		if __check_dmenu; then
+			_arg=$(printf '%s\n' $_dirs | rofi -dmenu -i -p Project 2>/dev/null)
+		else
+			select _arg in $_dirs; do break; done
+		fi
+	fi
+	[ -n "$_arg" ] && __init_project "$_arg"
+}
+
+function lsp {
+	if [ -n "$PROJECT" ] && [ -e "$PROJECT_BASE/$PROJECT$@" ]; then
 		local _arg="$PROJECT_BASE/$PROJECT$@"
 		[ -L "$_arg" ] && local _arg=`readlink -f "$_arg"`
 		echo "$_arg"
@@ -56,7 +62,7 @@ function lsp {
 
 function cdp {
 	local _arg=`lsp "$@"`
-	[ ! -z "$_arg" ] && cd "$_arg"
+	[ -n "$_arg" ] && [ -d "$_arg" ] && cd "$_arg"
 }
 #}}}
 
