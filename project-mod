@@ -45,6 +45,8 @@ function chproject {
 
 		if __check_dmenu; then
 			_arg=$(printf '%s\n' $_dirs | rofi -dmenu -i -p Project 2>/dev/null)
+		elif command -v fzf &>/dev/null; then
+			_arg=`printf "%s\n" $_dirs | fzf`
 		else
 			select _arg in $_dirs; do break; done
 		fi
