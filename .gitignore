@@ -1,0 +1,36 @@
+# Build artifacts
+*.tar
+*.tar.*
+*.pkg.tar*
+pkg/
+src/
+.SRCINFO
+
+# makepkg artifacts
+/*.tar.xz
+/PKGBUILD.local
+
+# Test artifacts and temporary files
+/test_tmp/
+/tmp/
+*.test.sh
+.test_*
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.code-workspace
+
+# OS files
+.AppleDouble/
+.LSOverride/
+._*
+
+# Project runtime files (optional - uncomment if needed)
+# /tmp/pm_*
+# /var/tmp/pm_*

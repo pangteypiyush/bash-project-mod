@@ -1,35 +1,38 @@
 # Maintainer: Piyush Pangtey <me at pangtey dot co dot in>
 
 pkgname=bash-project-mod
-pkgver=0.1
+pkgver=3.0.0
 pkgrel=1
-pkgdesc="Bash Project mod"
+pkgdesc="Lightweight bash/zsh project manager - switch projects and navigate quickly"
 arch=('any')
 url="https://github.com/pangteypiyush/bash-project-mod"
-license=('GPL')
-depends=( 'rofi' 'bash-completion' )
-_mod=project-mod
-_completion=project-completion
+license=('GPL3')
+depends=('bash>=4.0' 'fzf' 'bat')
+install=bash-project-mod.install
+_pm=pm.sh
+_completion=pm-completion.bash
+_test=test.sh
 source=(
-    "$_mod"
+    "$_pm"
     "$_completion"
+    "$_test"
     'LICENSE'
 )
 sha256sums=(
     'SKIP'
     'SKIP'
     'SKIP'
+    'SKIP'
 )
 
-pkgver() {
-    git describe --tags --always | sed -e 's;-;.;g'
+check() {
+    bash "$_test"
 }
 
 package() {
     install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
-    install -Dm644 "$srcdir/$_mod" "$pkgdir/usr/share/${pkgname}/$_mod"
-    install -Dm644 "$srcdir/$_completion" "$pkgdir/usr/share/bash-completion/completions/lsp"
-    for f in cdp chproject; do
-        ln -s lsp "$pkgdir/usr/share/bash-completion/completions/$f"
-    done
+    install -Dm755 "$srcdir/$_pm" "$pkgdir/usr/share/pm/$_pm"
+    install -Dm644 "$srcdir/$_completion" "$pkgdir/usr/share/bash-completion/completions/pm"
+    install -Dm644 "$srcdir/$_completion" "$pkgdir/usr/share/zsh/site-functions/_pm"
 }
+
