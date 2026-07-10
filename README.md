@@ -34,6 +34,7 @@ This installs pm to `/usr/share/pm/` with bash and zsh completion support.
 ```bash
 cp pm.sh ~/.local/share/pm/
 cp pm-completion.bash ~/.local/share/pm/
+cp pm-completion.zsh ~/.local/share/pm/
 ```
 
 2. Add to your `~/.bashrc` (for bash):
@@ -42,10 +43,11 @@ source ~/.local/share/pm/pm.sh
 source ~/.local/share/pm/pm-completion.bash
 ```
 
-Or add to your `~/.zshrc` (for zsh):
+Or add to your `~/.zshrc` (for zsh, native completion):
 ```bash
 source ~/.local/share/pm/pm.sh
-source ~/.local/share/pm/pm-completion.bash
+autoload -U compinit && compinit
+source ~/.local/share/pm/pm-completion.zsh
 ```
 
 3. Initialize pm with your projects directory:
@@ -240,7 +242,12 @@ These are automatically initialized from config when `pm.sh` is sourced.
 
 ## Completion Features
 
-Bash/Zsh tab-completion is automatically enabled when pm is sourced:
+Bash and zsh tab-completion are supported:
+
+- **Bash:** source `pm-completion.bash`
+- **Zsh (native):** source `pm-completion.zsh` after `compinit`
+
+### Command Completion
 
 **Command Prefix Matching:**
 - `pm sw<TAB>` → completes to `switch`
@@ -249,19 +256,48 @@ Bash/Zsh tab-completion is automatically enabled when pm is sourced:
 - `pm en<TAB>` → completes to `env`
 - `pm in<TAB>` → completes to `init`
 
-**Argument Completion:**
+### Argument Completion
 - `pm switch <TAB>` — Lists available projects
 - `pm base <TAB>` — Lists available bases
 - `pm default set <TAB>` — Lists available projects
 - `pm env <TAB>` — Lists env files (edit, list, attach, etc.)
 - `pm init <TAB>` — Lists directories
 
-**File/Directory Completion:**
+### File/Directory Completion
 - `pm ls <TAB>` — Lists files and directories with indicators:
   - Directories show with `/` suffix (e.g., `src/`)
   - Files show without suffix (e.g., `README.md`)
 - `pm ls src/<TAB>` — Shows contents inside `src/`
 - `pm ls src/m<TAB>` — Filters matching files in `src/`
+
+## Zsh Setup
+
+### Option 1: Source the script directly (simple)
+
+Add to `~/.zshrc`:
+
+```bash
+source /path/to/pm.sh
+autoload -U compinit && compinit
+source /path/to/pm-completion.zsh
+```
+
+### Option 2: Install as standard zsh completion file (recommended)
+
+```bash
+mkdir -p ~/.zsh/completions
+cp pm-completion.zsh ~/.zsh/completions/_pm
+```
+
+Then add this near the top of `~/.zshrc` (before `compinit`):
+
+```bash
+fpath=(~/.zsh/completions $fpath)
+autoload -U compinit && compinit
+source /path/to/pm.sh
+```
+
+This is the best long-term setup for macOS because it uses zsh's native completion loading model (`fpath` + `compinit`) and keeps completions decoupled from shell init logic.
 
 ## Testing
 
@@ -276,6 +312,7 @@ bash test.sh
 **Files:**
 - `pm.sh` — Main function (source this in bashrc)
 - `pm-completion.bash` — Bash completion support
+- `pm-completion.zsh` — Native zsh completion support
 - `test.sh` — Unit tests
 - `PKGBUILD` — ArchLinux package definition
 

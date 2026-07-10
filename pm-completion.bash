@@ -25,21 +25,21 @@ _pm_completion() {
 	# List available projects
 	_pm_get_projects() {
 		[[ -z "$PROJECT_BASE" ]] && return
-		find "$PROJECT_BASE" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort
+		find "$PROJECT_BASE" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sed 's#.*/##' | sort
 	}
 
 	# List available bases
 	_pm_get_bases() {
 		local bases_dir="${XDG_CONFIG_HOME:-$HOME/.config}/pm/config"
 		[[ ! -d "$bases_dir" ]] && return
-		find "$bases_dir" -maxdepth 1 -name '*.base' -type f -printf '%f\n' 2>/dev/null | sed 's/.base$//' | sort
+		find "$bases_dir" -maxdepth 1 -name '*.base' -type f 2>/dev/null | sed 's#.*/##' | sed 's/.base$//' | sort
 	}
 
 	# List available env files
 	_pm_get_env_files() {
 		local env_dir="${XDG_CONFIG_HOME:-$HOME/.config}/pm/env"
 		[[ ! -d "$env_dir" ]] && return
-		find "$env_dir" -maxdepth 1 -name '*.env' -type f -printf '%f\n' 2>/dev/null | sort
+		find "$env_dir" -maxdepth 1 -name '*.env' -type f 2>/dev/null | sed 's#.*/##' | sort
 	}
 
 	# List env files attached to current project
@@ -182,7 +182,7 @@ _pm_completion() {
 					else
 						all_matches+=("${cur}${base_name}")
 					fi
-				done < <(find "$full_path" -mindepth 1 -maxdepth 1 -printf '%p\n' 2>/dev/null | sort)
+				done < <(find "$full_path" -mindepth 1 -maxdepth 1 2>/dev/null | sort)
 			else
 				# Complete a partial path - get matching items
 				local parent_dir prefix_pattern
@@ -219,7 +219,7 @@ _pm_completion() {
 							fi
 						fi
 					fi
-				done < <(find "$parent_dir" -mindepth 1 -maxdepth 1 -printf '%p\n' 2>/dev/null | sort)
+				done < <(find "$parent_dir" -mindepth 1 -maxdepth 1 2>/dev/null | sort)
 			fi
 
 			COMPREPLY=($(printf '%s\n' "${all_matches[@]}" | sort -u))
@@ -263,7 +263,7 @@ _pm_completion() {
 					show)
 						# Project names for show (optional, defaults to current)
 						if [[ -n "$PROJECT_BASE" ]] && [[ -d "$PROJECT_BASE" ]]; then
-							COMPREPLY=($(compgen -W "$(find "$PROJECT_BASE" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort)" -- "$cur"))
+							COMPREPLY=($(compgen -W "$(find "$PROJECT_BASE" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sed 's#.*/##' | sort)" -- "$cur"))
 						fi
 						;;
 				esac

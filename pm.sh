@@ -35,7 +35,7 @@ _pm_warn() {
 # Get list of all available bases
 _pm_list_bases() {
 	[[ ! -d "$PM_BASES_DIR" ]] && return 1
-	find "$PM_BASES_DIR" -maxdepth 1 -name "*.base" -type f -printf '%f\n' | sed 's/\.base$//' | sort
+	find "$PM_BASES_DIR" -maxdepth 1 -name "*.base" -type f 2>/dev/null | sed 's#.*/##' | sed 's/\.base$//' | sort
 }
 
 # Get base path from its file
@@ -86,7 +86,7 @@ _pm_validate_project() {
 # List all projects in current base
 _pm_list_projects() {
 	[[ ! -d "$PROJECT_BASE" ]] && return 1
-	find "$PROJECT_BASE" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort
+	find "$PROJECT_BASE" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sed 's#.*/##' | sort
 }
 
 # ============================================================================
@@ -96,7 +96,7 @@ _pm_list_projects() {
 # Get list of all available env files
 _pm_list_env_files() {
 	[[ ! -d "$PM_ENV_DIR" ]] && return 1
-	find "$PM_ENV_DIR" -maxdepth 1 -name "*.env" -type f -printf '%f\n' | sort
+	find "$PM_ENV_DIR" -maxdepth 1 -name "*.env" -type f 2>/dev/null | sed 's#.*/##' | sort
 }
 
 # Get env associations for current project
@@ -154,7 +154,7 @@ _pm_source_env_files() {
 # Helper: Match env subcommand with prefix (e.g., 'e' matches 'edit')
 _pm_env_match_cmd() {
 	local prefix="$1"
-		local -a cmds=(edit list attach detach show use)
+	local -a cmds=(edit list attach detach show use)
 	local -a matches=()
 	local cmd
 
@@ -164,7 +164,15 @@ _pm_env_match_cmd() {
 		fi
 	done
 
-	[[ ${#matches[@]} -eq 1 ]] && echo "${matches[0]}" || echo ""
+	if [[ ${#matches[@]} -eq 1 ]]; then
+		if [[ -n "${ZSH_VERSION:-}" ]]; then
+			echo "${matches[1]}"
+		else
+			echo "${matches[0]}"
+		fi
+	else
+		echo ""
+	fi
 }
 
 # ============================================================================
@@ -185,7 +193,13 @@ _pm_match_cmd() {
 
 	case "${#matches[@]}" in
 		0) return 1 ;;
-		1) echo "${matches[0]}" ;;
+		1)
+			if [[ -n "${ZSH_VERSION:-}" ]]; then
+				echo "${matches[1]}"
+			else
+				echo "${matches[0]}"
+			fi
+			;;
 		*) _pm_err "ambiguous command: $prefix (${matches[*]})"; return 1 ;;
 	esac
 }
@@ -315,7 +329,6 @@ pm() {
 			}
 
 			export PROJECT="$project"
-			_pm_set_default_project "$base_name" "$project"
 
 			# Source env files for this project (non-fatal errors)
 			_pm_source_env_files "$base_name" "$project"
